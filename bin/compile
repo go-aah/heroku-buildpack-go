@@ -21,6 +21,7 @@ PkgErrorsVersion="$(<${DataJSON} jq -r '.PkgErrors.DefaultVersion')"
 MercurialVersion="$(<${DataJSON} jq -r '.HG.DefaultVersion')"
 MattesMigrateVersion="$(<${DataJSON} jq -r '.MattesMigrate.DefaultVersion')"
 TQVersion="$(<${DataJSON} jq -r '.tq.DefaultVersion')"
+AahVersion="$(<${DataJSON} jq -r '.aah.DefaultVersion')"
 # BazaarVersion="2.7.0"
 
 # For specified versions of Go we need to keep concurrency.sh
@@ -238,6 +239,33 @@ ensureGB() {
     fi
 }
 
+ensureAahCLI() {
+    local aahVersion="${1}"
+    local aPath="${cache}/aah/${aahVersion}/bin"
+    local aBin="${aPath}/aah"
+    local aFile="aah-${aahVersion}-linux-amd64.zip"
+    local targetFile="${aPath}/${aFile}"
+
+    if [ -x "${gBin}" ]; then
+        step "Using aah CLI ${aahVersion}"
+        addToPATH "${aPath}"
+    else
+        rm -rf "${cache}/aah"
+        step "Installing aah ${aahVersion}"
+        downloadAahCLI "${aFile}" "${aPath}" "unzip -qq -d ${aPath}" "aah_linux_amd64.zip"
+        chmod a+x "${aBin}"
+        addToPATH "${aPath}"
+        rm -f "${targetFile}"
+    fi
+    aah --version
+}
+
+buildAahApp() {
+    step "Running: aah build"
+    aah build -s -o "${src}/build/aah-app.zip" 2>&1
+    unzip -qq -o -d "${build}/bin" "${src}/build/aah-app.zip" 2>&1
+}
+
 ensureGo() {
     local goVersion="${1}"
     local goPath="${cache}/${goVersion}/go"
@@ -398,6 +426,8 @@ fi
 
 export GOPATH
 
+ensureAahCLI "${AahVersion}"
+
 # GB installation
 case "${TOOL}" in
     dep)
@@ -421,49 +451,50 @@ case "${TOOL}" in
         fi
         massagePkgSpecForVendor
 
-        step "Running: go install -v ${FLAGS[@]} ${pkgs}"
-        go install -v "${FLAGS[@]}" ${pkgs} 2>&1
+        buildAahApp
     ;;
     godep)
-        eval "$(setupGOPATH ${name})"
-        godepsJSON="${src}/Godeps/Godeps.json"
+        echo "godep is not supported by aah heroku buildpack, instead use dep, glide, govendor"
+        exit 1
+        # eval "$(setupGOPATH ${name})"
+        # godepsJSON="${src}/Godeps/Godeps.json"
 
-        pkgs=${GO_INSTALL_PACKAGE_SPEC:-$(<${godepsJSON} jq -r 'if .Packages then .Packages | join(" ") else "default" end')}
-        warnPackageSpecOverride
-        handleDefaultPkgSpec
+        # pkgs=${GO_INSTALL_PACKAGE_SPEC:-$(<${godepsJSON} jq -r 'if .Packages then .Packages | join(" ") else "default" end')}
+        # warnPackageSpecOverride
+        # handleDefaultPkgSpec
 
-        UseGodepCommand="false" # Default to not wrapping go install with godep (vendor)
-        if [ -d "${src}/Godeps/_workspace/src" ]; then
-            UseGodepCommand="true"
-            if [ -d "${src}/vendor" ]; then
-                warn ""
-                warn "Godeps/_workspace/src and vendor/ exist"
-                warn "code may not compile. Please convert all deps to vendor/"
-                warn ""
-            fi
-        fi
-        # Warn that GO15VENDOREXPIERMENT is set, but the go version does not support it.
-        if <"${DataJSON}" jq -e '.Go.SupportsVendorExperiment | indices(["'${ver}'"]) | length | if . == 0 then true else false end' &> /dev/null; then
-            if [ -n "${GO15VENDOREXPERIMENT}" ]; then
-                warn ""
-                warn "GO15VENDOREXPERIMENT is set, but is not supported by ${ver}"
-                warn "run \`heroku config:unset GO15VENDOREXPERIMENT\` to unset."
-                warn ""
-            fi
-        fi
+        # UseGodepCommand="false" # Default to not wrapping go install with godep (vendor)
+        # if [ -d "${src}/Godeps/_workspace/src" ]; then
+        #     UseGodepCommand="true"
+        #     if [ -d "${src}/vendor" ]; then
+        #         warn ""
+        #         warn "Godeps/_workspace/src and vendor/ exist"
+        #         warn "code may not compile. Please convert all deps to vendor/"
+        #         warn ""
+        #     fi
+        # fi
+        # # Warn that GO15VENDOREXPIERMENT is set, but the go version does not support it.
+        # if <"${DataJSON}" jq -e '.Go.SupportsVendorExperiment | indices(["'${ver}'"]) | length | if . == 0 then true else false end' &> /dev/null; then
+        #     if [ -n "${GO15VENDOREXPERIMENT}" ]; then
+        #         warn ""
+        #         warn "GO15VENDOREXPERIMENT is set, but is not supported by ${ver}"
+        #         warn "run \`heroku config:unset GO15VENDOREXPERIMENT\` to unset."
+        #         warn ""
+        #     fi
+        # fi
 
-        unset GIT_DIR # unset git dir or it will mess with goinstall
-        cd "${src}"
-        if [ "${UseGodepCommand}" = "true" ]; then
-            ensureInPath "godep_linux_amd64" "${cache}/godep/bin"
+        # unset GIT_DIR # unset git dir or it will mess with goinstall
+        # cd "${src}"
+        # if [ "${UseGodepCommand}" = "true" ]; then
+        #     ensureInPath "godep_linux_amd64" "${cache}/godep/bin"
 
-            step "Running: godep go install -v ${FLAGS[@]} ${pkgs}"
-            godep go install -v "${FLAGS[@]}" ${pkgs} 2>&1
-        else
-            massagePkgSpecForVendor
-            step "Running: go install -v ${FLAGS[@]} ${pkgs}"
-            go install -v "${FLAGS[@]}" ${pkgs} 2>&1
-        fi
+        #     step "Running: godep go install -v ${FLAGS[@]} ${pkgs}"
+        #     godep go install -v "${FLAGS[@]}" ${pkgs} 2>&1
+        # else
+        #     massagePkgSpecForVendor
+        #     step "Running: go install -v ${FLAGS[@]} ${pkgs}"
+        #     go install -v "${FLAGS[@]}" ${pkgs} 2>&1
+        # fi
     ;;
     govendor)
         ensureInPath "govendor_linux_amd64" "${cache}/govendor/bin"
@@ -484,8 +515,7 @@ case "${TOOL}" in
         fi
         massagePkgSpecForVendor
 
-        step "Running: go install -v ${FLAGS[@]} ${pkgs}"
-        go install -v "${FLAGS[@]}" ${pkgs} 2>&1
+        buildAahApp
     ;;
     glide)
         ensureGlide "${GlideVersion}"
@@ -510,21 +540,22 @@ case "${TOOL}" in
 
         massagePkgSpecForVendor
 
-        step "Running: go install -v ${FLAGS[@]} ${pkgs}"
-        go install -v "${FLAGS[@]}" ${pkgs} 2>&1
+        buildAahApp
     ;;
     gb)
-        ensureGB "${GBVersion}"
+        echo "gb is not supported by aah heroku buildpack, instead use vgo, dep, glide, govendor"
+        exit 1
+        # ensureGB "${GBVersion}"
 
-        cd $build
-        step "Running: gb build ${FLAGS[@]}"
-        gb build "${FLAGS[@]}" 2>&1
+        # cd $build
+        # step "Running: gb build ${FLAGS[@]}"
+        # gb build "${FLAGS[@]}" 2>&1
 
-        step "Post Compile Cleanup"
-        for f in bin/*-heroku; do
-            mv "$f" "${f/-heroku}"
-        done
-        rm -rf pkg
+        # step "Post Compile Cleanup"
+        # for f in bin/*-heroku; do
+        #     mv "$f" "${f/-heroku}"
+        # done
+        # rm -rf pkg
     ;;
 esac
 

@@ -113,6 +113,34 @@ downloadFile() {
     popd &> /dev/null
 }
 
+downloadAahCLI() {
+    local fileName="${1}"
+    local targetDir="${2}"
+    local xCmd="${3}"
+    local srcFileName="${4}"
+    local localName="$(determinLocalFileName "${fileName}")"
+    local targetFile="${targetDir}/${localName}"
+    local downloadURL="$(<"${FilesJSON}" jq -r '."'${fileName}'".URL')"
+
+    mkdir -p "${targetDir}"
+    pushd "${targetDir}" &> /dev/null
+        start "Fetching ${localName}"
+            ${CURL} -O "${downloadURL}"
+            mv "${srcFileName}" "${fileName}"
+            if [ -n "${xCmd}" ]; then
+                ${xCmd} ${targetFile}
+            fi
+            if ! SHAValid "${fileName}" "${targetFile}"; then
+                err ""
+                err "Downloaded file (${fileName}) sha does not match recorded SHA"
+                err "Unable to continue."
+                err ""
+                exit 1
+            fi
+        finished
+    popd &> /dev/null
+}
+
 SHAValid() {
     local fileName="${1}"
     local targetFile="${2}"
@@ -334,8 +362,8 @@ determineTool() {
         TOOL="gb"
         setGoVersionFromEnvironment
     else
-        err "dep, Godep, GB or govendor are required. For instructions:"
-        err "https://devcenter.heroku.com/articles/go-support"
+        err "dep, glide or govendor are required. For support:"
+        err "https://aahframework.org/issues"
         exit 1
     fi
 }

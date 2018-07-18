@@ -4,13 +4,18 @@ set -e
 
 build=$(cd "$1/" && pwd)
 
-if test -f "${build}/Gopkg.lock" || #dep
-   test -f "${build}/Godeps/Godeps.json" || # godeps
+if test -f "${build}/aah.project" || # aah
+   test -f "${build}/go.mod" || # vgo
+   test -f "${build}/Gopkg.lock" || #dep   
    test -f "${build}/vendor/vendor.json" || # govendor
-   test -f "${build}/glide.yaml" || # glide
-   (test -d "${build}/src" && test -n "$(find "${build}/src" -mindepth 2 -type f -name '*.go' | sed 1q)") # gb
+   test -f "${build}/glide.yaml" # glide
 then
-  echo Go
+  echo Go - aah framework
 else
+  echo "This heroku buildpack is applicable to only to aah framework application"
+  echo "aah heroku build pack supports only vgo, dep, glide and govendor"
   exit 1
 fi
+
+#test -f "${build}/Godeps/Godeps.json" || # godeps
+#(test -d "${build}/src" && test -n "$(find "${build}/src" -mindepth 2 -type f -name '*.go' | sed 1q)") # gb

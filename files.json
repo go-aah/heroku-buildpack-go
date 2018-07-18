@@ -340,5 +340,9 @@
         "URL":"https://github.com/golang/dep/releases/download/v0.4.1/dep-linux-amd64",
         "SHA":"31144e465e52ffbc0035248a10ddea61a09bf28b00784fd3fdd9882c8cbb2315",
         "LocalName": "dep"
+    },    
+    "aah-v0.12.0-linux-amd64.zip": {
+        "URL": "https://dl.aahframework.org/releases/cli/0.12.0/aah_linux_amd64.zip",
+        "SHA": "b98b20d58a9c64f1fb2b34665683a8c8954d84679291e799a4f53ddf7e1d7ba6"
     }
 }
