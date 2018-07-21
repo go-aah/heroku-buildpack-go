@@ -344,5 +344,9 @@
     "aah-v0.12.0-linux-amd64.zip": {
         "URL": "https://dl.aahframework.org/releases/cli/0.12.0/aah_linux_amd64.zip",
         "SHA": "b98b20d58a9c64f1fb2b34665683a8c8954d84679291e799a4f53ddf7e1d7ba6"
+    },
+    "aah-v0.12.1-linux-amd64.zip": {
+        "URL": "https://dl.aahframework.org/releases/cli/0.12.1/aah-linux-amd64.zip",
+        "SHA": "b23d94d795dff516a5e414a068f542476a0c33e5138e2f27e01c6bb4beb6ba2f"
     }
 }
