@@ -1,41 +1,42 @@
-# Heroku Buildpack for Go
-
-[![travis ci](https://travis-ci.org/heroku/heroku-buildpack-go.svg?branch=master)](https://travis-ci.org/heroku/heroku-buildpack-go)
-
-![Heroku Buildpack for Go](https://cloud.githubusercontent.com/assets/51578/15877053/53506724-2cdf-11e6-878c-e2ef60ba741f.png)
-
-This is the official [Heroku buildpack][buildpack] for [Go][go].
+<p align="center">
+  <img src="https://cdn.aahframework.org/assets/img/aah-logo-64x64.png" />
+  <h2 align="center">Heroku Buildpack for aah framework</h2>
+  <p>This is fork of offical heroku Go buildpack and added couple of methods for aah framework.</p>
+</p>
 
 ## Getting Started
 
-Follow the guide at
-<https://devcenter.heroku.com/articles/getting-started-with-go>
-
-There's also a hello world sample app at
-<https://github.com/heroku/go-getting-started>
+Heroku docs applied as-is, Follow the guide at
+<https://devcenter.heroku.com/articles/getting-started-with-go>. Plus using aah buildpack.
 
 ## Example
 
-```console
-$ ls -A1
-.git
-vendor
-Procfile
-web.go
+Step 1:
 
-$ heroku create
+Create file `Procfile` with content `web: <app-name> -profile prod` on app root directory.
+
+Step 2:
+
+```console
+$ heroku create -b https://github.com/go-aah/heroku-buildpack-go.git
 Creating polar-waters-4785...
 ...
 
 $ git push heroku master
 ...
------> Go app detected
------> Installing go1.9... done
------> Running: go install -tags heroku ./...
+-----> Go - aah framework app detected
+-----> Using go1.10.3
+-----> Installing aah CLI v0.12.0
+-----> Fetching aah-v0.12.0-linux-amd64.zip... done
+...
+...
+-----> Running: aah build
+...
+...
 -----> Discovering process types
        Procfile declares types -> web
 
------> Compressing... done, 1.6MB
+-----> Compressing... done, 7.3MB
 -----> Launching... done, v4
        https://polar-waters-4785.herokuapp.com/ deployed to Heroku
 ```
@@ -45,8 +46,6 @@ This buildpack will detect your repository as Go if you are using either:
 - [dep][dep]
 - [govendor][govendor]
 - [glide][glide]
-- [GB][gb]
-- [Godep][godep]
 
 This buildpack adds a `heroku` [build constraint][build-constraint], to enable
 heroku-specific code. See the [App Engine build constraints

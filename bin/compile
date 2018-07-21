@@ -251,7 +251,7 @@ ensureAahCLI() {
         addToPATH "${aPath}"
     else
         rm -rf "${cache}/aah"
-        step "Installing aah ${aahVersion}"
+        step "Installing aah CLI ${aahVersion}"
         downloadAahCLI "${aFile}" "${aPath}" "unzip -qq -d ${aPath}" "aah_linux_amd64.zip"
         chmod a+x "${aBin}"
         addToPATH "${aPath}"
